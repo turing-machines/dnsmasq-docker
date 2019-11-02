@@ -1,0 +1,28 @@
+[Unit]
+Description=dnsmasq service
+After=docker.service
+Requires=docker.service
+
+[Service]
+TimeoutStartSec=0
+Restart=always
+
+ExecStartPre=-/usr/bin/docker exec %n stop
+ExecStartPre=-/usr/bin/docker rm %n
+ExecStartPre=/usr/bin/docker pull turing-machines/dnsmasq
+
+ExecStart=/usr/bin/docker run --rm --name %n \
+    -v /tftpboot:/tftpboot \
+    -v /opt/dnsmasq.conf:/etc/dnsmasq.conf \
+    --net=host \
+    --cap-add=NET_BIND_SERVICE \
+    --log-opt "max-size=100m" \
+    -e "HTTP_USER=turing" \
+    -e "HTTP_PASS=machines" \
+    turing-machines/dnsmasq
+
+ExecStop=/usr/bin/docker stop -t 2 %n
+
+[Install]
+WantedBy=default.target
+
